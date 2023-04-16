@@ -10,11 +10,11 @@ import IPython
 import copy
 
 
-def fnet_single(params, x):
+def fnet_single(params, x):  # evaluates the model at a single data point
     return fnet(params, x.unsqueeze(0)).squeeze(0)
 
 
-def empirical_ntk_jacobian_contraction(fnet_single, params, x1, x2, compute='full'):
+def empirical_ntk_jacobian_contraction(fnet_single, params, x1, x2):
     # Compute J(x1)
     jac1 = vmap(jacrev(fnet_single), (None, 0))(params, x1)
     jac1 = [j.flatten(2) for j in jac1]
@@ -24,17 +24,7 @@ def empirical_ntk_jacobian_contraction(fnet_single, params, x1, x2, compute='ful
     jac2 = [j.flatten(2) for j in jac2]
 
     # Compute J(x1) @ J(x2).T
-    einsum_expr = None
-    if compute == 'full':
-        einsum_expr = 'Naf,Mbf->NMab'
-    elif compute == 'trace':
-        einsum_expr = 'Naf,Maf->NM'
-    elif compute == 'diagonal':
-        einsum_expr = 'Naf,Maf->NMa'
-    else:
-        assert False
-
-    result = torch.stack([torch.einsum(einsum_expr, j1, j2)
+    result = torch.stack([torch.einsum('Naf,Mbf->NMab', j1, j2)
                          for j1, j2 in zip(jac1, jac2)])
     result = result.sum(0)
     return result
@@ -120,19 +110,20 @@ for j, width in enumerate([500, 5000, 10000, 50000]):
         optimizer = optim.SGD(model.parameters(), lr=1)
         model.train()
         for batch, (X, y) in enumerate(train_loader):
-            # print(f'batch: {batch}/{n_batches}')
+
             X, y = X.to(device), y.to(device)
             if batch == 0:
+
                 model_copy = network.LinearNet(layer_widths).to(device)
                 model_copy.load_state_dict(get_weights_copy(model))
-
                 fnet, params = make_functional(model_copy)
-                x1 = X.clone().detach()
 
+                x1 = X.clone().detach()
                 x2 = X.clone().detach()
+
                 x2[0][0] = 1
                 x2[0][1] = 0
-                # IPython.embed()
+
                 NTKlist = []
                 for gamma in gamma_list:
 
@@ -140,34 +131,32 @@ for j, width in enumerate([500, 5000, 10000, 50000]):
                     x1[0][1] = torch.sin(gamma)
 
                     NTK = empirical_ntk_jacobian_contraction(
-                        fnet_single, params, x1, x2, 'full')
+                        fnet_single, params, x1, x2)
                     NTKlist.append(NTK[0][0][0].item())
 
                 plt.plot(gamma_list, NTKlist, ':',
                          label=f'w = {width}, n = {batch}' if i == 5 else None, alpha=0.5, color=colors[j])
                 if i == 5:
                     plt.legend()
-            # Compute prediction error
+
             pred = model(X)
             loss = loss_fn(pred, y.unsqueeze(1))
-            # Backpropagation
+
             optimizer.zero_grad()
             loss.backward(retain_graph=True)
-            # tmp = model.NTK(retain_graph=True)
-            # print(tmp.item())
-
-            # print(f'batch % 10 = {batch % 10}')
+            optimizer.step()
             if batch == 199:
+
                 model_copy = network.LinearNet(layer_widths).to(device)
                 model_copy.load_state_dict(get_weights_copy(model))
-
                 fnet, params = make_functional(model_copy)
-                x1 = X.clone().detach()
 
+                x1 = X.clone().detach()
                 x2 = X.clone().detach()
+
                 x2[0][0] = 1
                 x2[0][1] = 0
-                # IPython.embed()
+
                 NTKlist = []
                 for gamma in gamma_list:
 
@@ -175,16 +164,13 @@ for j, width in enumerate([500, 5000, 10000, 50000]):
                     x1[0][1] = torch.sin(gamma)
 
                     NTK = empirical_ntk_jacobian_contraction(
-                        fnet_single, params, x1, x2, 'full')
+                        fnet_single, params, x1, x2)
                     NTKlist.append(NTK[0][0][0].item())
                 plt.plot(gamma_list, NTKlist, '-',
                          label=f'w = {width}, n = {batch+1}' if i == 5 else None, alpha=0.5, color=colors[j])
+
                 if i == 5:
                     plt.legend()
-            optimizer.step()
-
-            loss, current = loss.item(), (batch + 1) * len(X)
-            # print(f"loss: {loss:>7f}  [{current:>5d}/{size:>5d}]")
 
 plt.title('NTK^(4) (x_0, x) vs gamma' +
           '\n x_0 = (1, 0), x = (cos(gamma), sin(gamma))')
