@@ -153,8 +153,8 @@ for j, width in enumerate([500, 5000, 10000, 50000]):  # width of hidden layers
                 x1 = X.clone().detach()
                 x2 = X.clone().detach()
 
-                x2[0][0] = 1
-                x2[0][1] = 0
+                x2[0][0] = torch.sqrt(2) / 2
+                x2[0][1] = torch.sqrt(2) / 2
 
                 # NTKlist holds the NTK values over gamma
                 NTKlist = []
@@ -194,8 +194,8 @@ for j, width in enumerate([500, 5000, 10000, 50000]):  # width of hidden layers
                 x1 = X.clone().detach()
                 x2 = X.clone().detach()
 
-                x2[0][0] = 1
-                x2[0][1] = 0
+                x2[0][0] = torch.sqrt(2) / 2
+                x2[0][1] = torch.sqrt(2) / 2
 
                 NTKlist = []
                 for gamma in gamma_list:
@@ -213,7 +213,7 @@ for j, width in enumerate([500, 5000, 10000, 50000]):  # width of hidden layers
                     plt.legend()
 
 plt.title('NTK^(4) (x_0, x) vs gamma' +
-          '\n x_0 = (1, 0), x = (cos(gamma), sin(gamma))')
+          '\n x_0 = (1/sqrt(2), 1/sqrt(2)), x = (cos(gamma), sin(gamma))')
 plt.xlabel('gamma')
 plt.ylabel('NTK^(4) (x_0, x)')
 plt.show()
