@@ -105,7 +105,6 @@ train_loader = torch.utils.data.DataLoader(
 
 depth = 4  # specified by paper
 
-layer_widths = [2, *[width for _ in range(depth - 2)], 1]  # specified by paper
 
 loss_fn = nn.MSELoss()  # specified by paper
 
@@ -124,6 +123,8 @@ for j, width in enumerate([500, 5000, 10000, 50000]):  # width of hidden layers
     print(f'width: {width}')
     for i in range(10):
         print(f'init: {i}/10')
+        # specified by paper
+        layer_widths = [2, *[width for _ in range(depth - 2)], 1]
         model = network.LinearNet(layer_widths).to(
             device)  # initialize a fresh model
 
