@@ -12,13 +12,13 @@ class Linear(Module):
         super(Linear, self).__init__()
         self.in_features = in_features
         self.out_features = out_features
-        self.weight = Parameter(torch.Tensor(out_features, in_features).cuda())
+        self.weight = Parameter(torch.Tensor(out_features, in_features))
 
         self.stdv = numpy.sqrt(1-beta**2) / math.sqrt(in_features*1.0)
         self.beta = beta
 
         if bias:
-            self.bias = Parameter(torch.Tensor(out_features).cuda())
+            self.bias = Parameter(torch.Tensor(out_features))
         else:
             self.register_parameter('bias', None)
         self.reset_parameters()

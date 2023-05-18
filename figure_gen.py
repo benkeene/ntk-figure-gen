@@ -10,6 +10,8 @@ import IPython
 import copy
 import math
 
+device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
+
 
 def fnet_single(params, x):  # evaluates the model at a single data point
     return fnet(params, x.unsqueeze(0)).squeeze(0)
@@ -32,24 +34,11 @@ def empirical_ntk_jacobian_contraction(fnet_single, params, x1, x2):
     result = result.sum(0)
     return result
 
-# hacky way to get a copy of the model
-# we will use this to make a new copy
-# to compute the NTK
-# pytorch doesn't like calculating the NTK
-# of a model that while it's in the middle of
-# training
-
 
 def get_weights_copy(model):
     weights_path = 'weights.pth'
     torch.save(model.state_dict(), weights_path)
     return torch.load(weights_path)
-
-# pytorch CustomDataset class
-# we use this to construct the dataset
-# gamma = [-2pi, 2pi]
-# x = (cos(gamma), sin(gamma))
-# f(x) = (x_0)*(x_1)
 
 
 class CustomDataset(torch.utils.data.Dataset):
@@ -74,8 +63,6 @@ class CustomDataset(torch.utils.data.Dataset):
     def __len__(self):
         return self.tensors[0].size(0)
 
-
-device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 
 # number of gammas to use
 n_points = 200
@@ -113,10 +100,16 @@ loss_fn = nn.MSELoss()  # specified by paper
 size = len(train_loader.dataset)  # number of data points
 
 colors = [
-    'tab:green',
     'tab:blue',
+    'tab:orange',
+    'tab:green',
     'tab:red',
-    'tab:purple'
+    'tab:purple',
+    'tab:brown',
+    'tab:pink',
+    'tab:gray',
+    'tab:olive',
+    'tab:cyan'
 ]
 
 
